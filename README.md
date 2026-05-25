@@ -1,46 +1,43 @@
 # condition-github-actions
 
-GitHub Actions CI condition plugin for SemRel.
+GitHub Actions CI condition plugin for [SemRel](https://github.com/SemRels/semrel).
 
-Checks GitHub Actions workflow state before SemRel publishes a release.
+Verifies that a release is running inside an authorised GitHub Actions environment
+before allowing the release pipeline to proceed.
 
-## Documentation
+## What It Checks
 
-- SemRel docs (planned): <https://github.com/SemRels/semrel/tree/main/docs/plugins/condition-github-actions>
-- Plugin template: <https://github.com/SemRels/plugin-template>
-- Registry: <https://registry.semrel.io>
+1. `GITHUB_ACTIONS=true` — confirms the pipeline runs in GitHub Actions
+2. `GITHUB_TOKEN` or `GH_TOKEN` — a token must be present to create releases
+3. Branch match (optional) — if a branch is configured in `.semrel.yaml`,
+   the plugin compares it against `GITHUB_REF_NAME` / `GITHUB_REF`
 
-## Repository Layout
+## Configuration (`.semrel.yaml`)
 
-~~~text
-cmd/plugin/              Plugin entry point
-internal/plugin/         Business logic scaffold
-internal/grpc/           gRPC transport scaffold
-proto/v1                 Symlink to the SemRel protobuf contract
-.github/workflows/       CI, release, and security automation
-~~~
-
-## Development
-
-~~~bash
-go build ./cmd/plugin
-go test ./...
-~~~
-
-## Configuration Example
-
-~~~yaml
+```yaml
 plugins:
   - name: condition-github-actions
     type: condition
     config:
-      required_workflows:
-        - CI
-        - Security
-      required_conclusion: success
-      token: ${GITHUB_TOKEN}
-~~~
+      branch: main   # optional; defaults to no branch check
+```
 
-## Status
+## Repository Layout
 
-This repository is bootstrapped from SemRels/plugin-template and is ready for implementation.
+```
+cmd/plugin/            Plugin entry point (go-plugin / gRPC serve)
+internal/plugin/       Business logic (Condition struct)
+internal/grpc/         Legacy stub (replaced by semrel-api/plugin)
+```
+
+## Development
+
+```bash
+go test ./...
+go build ./cmd/plugin
+```
+
+## License
+
+Apache-2.0 — see [LICENSE](LICENSE).
+
