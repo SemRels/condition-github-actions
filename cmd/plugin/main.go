@@ -4,19 +4,22 @@
 package main
 
 import (
-	semrelapi "github.com/SemRels/semrel-api/plugin"
-	conditionplugin "github.com/SemRels/condition-github-actions/internal/plugin"
-	"github.com/hashicorp/go-plugin"
+	"fmt"
+	"io"
+	"os"
+
+	plugin "github.com/SemRels/condition-github-actions/internal/plugin"
 )
 
+func run(getenv func(string) string, stderr io.Writer) int {
+	c := plugin.NewWithEnv(getenv)
+	if err := c.Check(); err != nil {
+		fmt.Fprintln(stderr, "condition-github-actions:", err)
+		return 1
+	}
+	return 0
+}
+
 func main() {
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: semrelapi.HandshakeConfig,
-		Plugins: map[string]plugin.Plugin{
-			"condition": &semrelapi.CIConditionGRPCPlugin{
-				Impl: conditionplugin.New(),
-			},
-		},
-		GRPCServer: plugin.DefaultGRPCServer,
-	})
+	os.Exit(run(os.Getenv, os.Stderr))
 }

@@ -4,116 +4,115 @@
 package plugin
 
 import (
-	"context"
+	"strings"
 	"testing"
-
-	semrelv1 "github.com/SemRels/semrel-api/api/gen/v1"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func env(kv map[string]string) func(string) string {
 	return func(key string) string { return kv[key] }
 }
 
-func validEnv() map[string]string {
-	return map[string]string{
+func TestCheck_HappyPath(t *testing.T) {
+	t.Parallel()
+
+	c := NewWithEnv(env(map[string]string{
 		"GITHUB_ACTIONS": "true",
 		"GITHUB_TOKEN":   "ghp_test",
-		"GITHUB_REF_NAME": "main",
+	}))
+
+	if err := c.Check(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestVerifyConditions_HappyPath(t *testing.T) {
+func TestCheck_AllowsGHToken(t *testing.T) {
 	t.Parallel()
 
-	c := NewWithEnv(env(validEnv()))
-	resp, err := c.VerifyConditions(context.Background(), &semrelv1.VerifyConditionsRequest{
-		Ctx: &semrelv1.ReleaseContext{Branch: "main"},
-	})
+	c := NewWithEnv(env(map[string]string{
+		"GITHUB_ACTIONS": "true",
+		"GH_TOKEN":       "ghp_test",
+	}))
 
-	require.NoError(t, err)
-	assert.Empty(t, resp.GetErrorMessage())
+	if err := c.Check(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
 
-func TestVerifyConditions_NotInGitHubActions(t *testing.T) {
+func TestCheck_NotInGitHubActions(t *testing.T) {
 	t.Parallel()
 
-	e := validEnv()
-	delete(e, "GITHUB_ACTIONS")
-
-	c := NewWithEnv(env(e))
-	resp, err := c.VerifyConditions(context.Background(), &semrelv1.VerifyConditionsRequest{})
-
-	require.NoError(t, err)
-	assert.Contains(t, resp.GetErrorMessage(), "GITHUB_ACTIONS")
+	c := NewWithEnv(env(map[string]string{"GITHUB_TOKEN": "ghp_test"}))
+	err := c.Check()
+	if err == nil || !strings.Contains(err.Error(), "GITHUB_ACTIONS") {
+		t.Fatalf("expected GITHUB_ACTIONS error, got: %v", err)
+	}
 }
 
-func TestVerifyConditions_MissingToken(t *testing.T) {
+func TestCheck_MissingToken(t *testing.T) {
 	t.Parallel()
 
-	e := validEnv()
-	delete(e, "GITHUB_TOKEN")
-
-	c := NewWithEnv(env(e))
-	resp, err := c.VerifyConditions(context.Background(), &semrelv1.VerifyConditionsRequest{})
-
-	require.NoError(t, err)
-	assert.Contains(t, resp.GetErrorMessage(), "GITHUB_TOKEN")
+	c := NewWithEnv(env(map[string]string{"GITHUB_ACTIONS": "true"}))
+	err := c.Check()
+	if err == nil || !strings.Contains(err.Error(), "GITHUB_TOKEN") {
+		t.Fatalf("expected token error, got: %v", err)
+	}
 }
 
-func TestVerifyConditions_GHTokenAlternative(t *testing.T) {
+func TestCheck_BranchMatchWithRefName(t *testing.T) {
 	t.Parallel()
 
-	e := validEnv()
-	delete(e, "GITHUB_TOKEN")
-	e["GH_TOKEN"] = "ghp_test"
+	c := NewWithEnv(env(map[string]string{
+		"GITHUB_ACTIONS":       "true",
+		"GITHUB_TOKEN":         "ghp_test",
+		"SEMREL_PLUGIN_BRANCH": "main",
+		"GITHUB_REF_NAME":      "main",
+	}))
 
-	c := NewWithEnv(env(e))
-	resp, err := c.VerifyConditions(context.Background(), &semrelv1.VerifyConditionsRequest{})
-
-	require.NoError(t, err)
-	assert.Empty(t, resp.GetErrorMessage())
+	if err := c.Check(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
 
-func TestVerifyConditions_BranchMismatch(t *testing.T) {
+func TestCheck_BranchMatchWithRefFallback(t *testing.T) {
 	t.Parallel()
 
-	e := validEnv()
-	e["GITHUB_REF_NAME"] = "feature/something"
+	c := NewWithEnv(env(map[string]string{
+		"GITHUB_ACTIONS":       "true",
+		"GITHUB_TOKEN":         "ghp_test",
+		"SEMREL_PLUGIN_BRANCH": "main",
+		"GITHUB_REF":           "refs/heads/main",
+	}))
 
-	c := NewWithEnv(env(e))
-	resp, err := c.VerifyConditions(context.Background(), &semrelv1.VerifyConditionsRequest{
-		Ctx: &semrelv1.ReleaseContext{Branch: "main"},
-	})
-
-	require.NoError(t, err)
-	assert.Contains(t, resp.GetErrorMessage(), "branch mismatch")
+	if err := c.Check(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
 
-func TestVerifyConditions_BranchFromGITHUB_REF(t *testing.T) {
+func TestCheck_BranchMismatch(t *testing.T) {
 	t.Parallel()
 
-	e := validEnv()
-	delete(e, "GITHUB_REF_NAME")
-	e["GITHUB_REF"] = "refs/heads/main"
+	c := NewWithEnv(env(map[string]string{
+		"GITHUB_ACTIONS":       "true",
+		"GITHUB_TOKEN":         "ghp_test",
+		"SEMREL_PLUGIN_BRANCH": "main",
+		"GITHUB_REF_NAME":      "develop",
+	}))
 
-	c := NewWithEnv(env(e))
-	resp, err := c.VerifyConditions(context.Background(), &semrelv1.VerifyConditionsRequest{
-		Ctx: &semrelv1.ReleaseContext{Branch: "main"},
-	})
-
-	require.NoError(t, err)
-	assert.Empty(t, resp.GetErrorMessage())
+	err := c.Check()
+	if err == nil || !strings.Contains(err.Error(), "branch mismatch") {
+		t.Fatalf("expected branch mismatch, got: %v", err)
+	}
 }
 
-func TestVerifyConditions_MultipleErrors(t *testing.T) {
+func TestCheck_MultipleErrors(t *testing.T) {
 	t.Parallel()
 
-	c := NewWithEnv(env(map[string]string{}))
-	resp, err := c.VerifyConditions(context.Background(), &semrelv1.VerifyConditionsRequest{})
+	err := NewWithEnv(env(map[string]string{})).Check()
+	if err == nil {
+		t.Fatal("expected error")
+	}
 
-	require.NoError(t, err)
-	assert.Contains(t, resp.GetErrorMessage(), "GITHUB_ACTIONS")
-	assert.Contains(t, resp.GetErrorMessage(), "GITHUB_TOKEN")
+	if !strings.Contains(err.Error(), "GITHUB_ACTIONS") || !strings.Contains(err.Error(), "GITHUB_TOKEN") {
+		t.Fatalf("expected combined errors, got: %v", err)
+	}
 }
