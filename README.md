@@ -1,43 +1,39 @@
 # condition-github-actions
 
-GitHub Actions CI condition plugin for [SemRel](https://github.com/SemRels/semrel).
+Allows releases only when semrel is running inside GitHub Actions.
 
-Verifies that a release is running inside an authorised GitHub Actions environment
-before allowing the release pipeline to proceed.
+This plugin is distributed as the standalone Go binary `semrel-plugin-condition-github-actions`. Semrel executes the binary as a subprocess, provides plugin configuration through `SEMREL_PLUGIN_*` environment variables, provides release context through `SEMREL_*` environment variables, reads standard output, and treats exit code `0` as success and any non-zero exit code as failure. Install the binary in `~/.semrel/plugins/` or anywhere on your `$PATH`.
 
-## What It Checks
+## Installation
 
-1. `GITHUB_ACTIONS=true` — confirms the pipeline runs in GitHub Actions
-2. `GITHUB_TOKEN` or `GH_TOKEN` — a token must be present to create releases
-3. Branch match (optional) — if a branch is configured in `.semrel.yaml`,
-   the plugin compares it against `GITHUB_REF_NAME` / `GITHUB_REF`
+```bash
+go install github.com/SemRels/condition-github-actions/cmd/plugin@latest
+```
 
-## Configuration (`.semrel.yaml`)
+## Configuration
 
 ```yaml
 plugins:
   - name: condition-github-actions
-    type: condition
-    config:
-      branch: main   # optional; defaults to no branch check
+    path: ~/.semrel/plugins/semrel-plugin-condition-github-actions
+    env:
+      {}
 ```
 
-## Repository Layout
+## `SEMREL_PLUGIN_*` variables
 
-```
-cmd/plugin/            Plugin entry point (go-plugin / gRPC serve)
-internal/plugin/       Business logic (Condition struct)
-internal/grpc/         Legacy stub (replaced by semrel-api/plugin)
-```
+| Name | Required | Description | Default |
+| --- | --- | --- | --- |
+| _None_ | - | This plugin does not require any `SEMREL_PLUGIN_*` variables. It relies on CI-provided environment state. | - |
 
-## Development
+## `SEMREL_*` release context used
 
-```bash
-go test ./...
-go build ./cmd/plugin
-```
+This plugin does not consume any `SEMREL_*` release context variables directly.
+
+## Example behavior
+
+The plugin checks the CI environment and succeeds when `GITHUB_ACTIONS=true`. Outside GitHub Actions it exits non-zero to stop the release.
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE).
-
+Apache-2.0
