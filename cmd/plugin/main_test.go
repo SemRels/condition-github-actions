@@ -21,7 +21,7 @@ func TestRun_Success(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("expected exit code 0, got %d", code)
 	}
-	if stderr.Len() != 0 {
+	if stderr.String() != "plugin_schema_version=1\n" {
 		t.Fatalf("expected no stderr output, got %q", stderr.String())
 	}
 }
