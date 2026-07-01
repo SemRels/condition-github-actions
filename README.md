@@ -1,6 +1,6 @@
 # condition-github-actions
 
-[![Latest Release](https://img.shields.io/github/v/release/SemRels/condition-github-actions?label=version\&color=blue)](https://github.com/SemRels/condition-github-actions/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/SemRels/condition-github-actions?label=version&color=blue)](https://github.com/SemRels/condition-github-actions/releases/latest)
 
 Allows releases only when semrel is running inside GitHub Actions.
 
