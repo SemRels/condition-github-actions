@@ -4,6 +4,7 @@
   "title": "condition-github-actions plugin configuration",
   "description": "Schema v1 for the condition-github-actions semrel plugin (supports github.com, GitHub Enterprise Server, and GitHub Enterprise Cloud with data residency). Configure via SEMREL_* environment variables.",
   "type": "object",
+  "x-semrel-dry-run": true,
   "properties": {
     "SEMREL_PLUGIN_BRANCH": {
       "type": "string",
