@@ -39,17 +39,19 @@ cosign verify ghcr.io/semrels/condition-github-actions:latest \
 
 ```yaml
 plugins:
-  - name: condition-github-actions
-    path: ~/.semrel/plugins/semrel-plugin-condition-github-actions
-    env:
-      {}
+  - uses: "@semrel/condition-github-actions"
+    phase: condition
+    args:
+      branch: "main"
 ```
 
-## `SEMREL_PLUGIN_*` variables
+## Options
 
-| Name | Required | Description | Default |
-| --- | --- | --- | --- |
-| `SEMREL_PLUGIN_BRANCH` | No | Optional branch name override. When set, requires `GITHUB_REF_NAME` (or `GITHUB_REF` stripped of `refs/heads/`) to match this value. | `""` |
+Every option can be set as an entry under `args` in `.semrel.yaml`. semrel passes each entry to the plugin as the environment variable shown in the table, so you can also set that variable directly (for example in your CI environment) instead of using `args`.
+
+| Argument | Environment variable | Required | Description | Default |
+| --- | --- | --- | --- | --- |
+| `branch` | `SEMREL_PLUGIN_BRANCH` | No | Optional branch name override. When set, requires `GITHUB_REF_NAME` (or `GITHUB_REF` stripped of `refs/heads/`) to match this value. | `""` |
 
 ## GitHub Actions environment variables
 
