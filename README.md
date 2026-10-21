@@ -1,6 +1,10 @@
 # condition-github-actions
 
 [![Latest Release](https://img.shields.io/github/v/release/SemRels/condition-github-actions?label=version&color=blue)](https://github.com/SemRels/condition-github-actions/releases/latest)
+[![CI](https://github.com/SemRels/condition-github-actions/actions/workflows/ci.yml/badge.svg)](https://github.com/SemRels/condition-github-actions/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/SemRels/condition-github-actions)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SemRels/condition-github-actions/badge)](https://scorecard.dev/viewer/?uri=github.com/SemRels/condition-github-actions)
+[![REUSE status](https://api.reuse.software/badge/github.com/SemRels/condition-github-actions)](https://api.reuse.software/info/github.com/SemRels/condition-github-actions)
 
 Allows releases only when semrel is running inside GitHub Actions.
 
